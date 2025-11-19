@@ -253,40 +253,36 @@ class Snipe:
             "serial": payload['serial_number'],
             "_snipeit_bluetooth_mac_address_11": payload['bluetooth_mac_address']
         }
-        
+
         #lets get the proper os name
         if(payload['os'] == "mac"):
             os = "MacOS"
             #cpu stuff is only supplied by MacOS
-            finalPayload["_snipeit_cpu_family_7"] = payload['cpu_model']
-
-            finalPayload["_snipeit_percent_disk_5"] = payload['percent_disk'] + " GB"
-            finalPayload["_snipeit_available_disk_5"] = payload['available_disk'] + " GB"
+            # Use _snipeit_cpu_8 instead of the non-existent _snipeit_cpu_family_7
+            finalPayload["_snipeit_cpu_8"] = payload['cpu_model']
         elif(payload['os'] == "ios"):
             os = "iOS"
-            finalPayload["_snipeit_percent_disk_5"] = payload['percent_disk'] + " GB"
-            finalPayload["_snipeit_available_disk_5"] = payload['available_disk'] + " GB"
         elif(payload['os'] == "tvos"):
             os = "tvos"
         else:
             os = "Not Known"
-        
-                
+
+
         finalPayload['_snipeit_os_info_6'] = os
-        
+
         #set os version
         finalPayload['_snipeit_osversion_12'] = payload['osversion']
-        
+
         #macaddress stuff
         wifiMac = payload['wifi_mac_address']
         eithernetMac = payload['ethernet_mac_address']
-        
+
         #default to eithernet mac, if not, fall back to wifi mac. If neither, leave blank
         if(wifiMac != None and eithernetMac == None):
             finalPayload['_snipeit_mac_address_1'] = wifiMac
         elif(eithernetMac != None):
             finalPayload['_snipeit_mac_address_1'] = eithernetMac
-        
+
         return finalPayload
 
     def snipeItRequest(self, type, url, params=None, json=None):
