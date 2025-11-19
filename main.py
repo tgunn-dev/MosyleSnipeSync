@@ -235,9 +235,10 @@ def run_sync(config):
                             try:
                                 model_data = create_response.json()
                                 model = model_data['payload']['id']
-                            except (ValueError, TypeError, KeyError) as e:
+                            except (ValueError, TypeError, KeyError, AttributeError) as e:
                                 logger.error(f"Failed to parse model creation response for {sn['device_model']}: {e}")
-                                logger.error(f"Response status: {create_response.status_code}, body: {create_response.text}")
+                                if hasattr(create_response, 'status_code'):
+                                    logger.error(f"Response status: {create_response.status_code}, body: {create_response.text}")
                                 progress.advance(task)
                                 continue
                         else:

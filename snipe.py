@@ -87,6 +87,8 @@ class Snipe:
 
         print('Creating Snipe Model with payload:', payload)
         results = self.snipeItRequest("POST", "/models", json = payload)
+        if results is None:
+            return None
         #print('the server returned ', results);
         return results
 
@@ -161,7 +163,10 @@ class Snipe:
             "fieldset_id": self.ios_fieldset_id,
             "image": imageResponse
         }
-        return self.snipeItRequest("POST", "/models", json = payload)
+        response = self.snipeItRequest("POST", "/models", json = payload)
+        if response is None:
+            return None
+        return response
     def createAppleTvModel(self, model):
         print('creating new Apple Tv Model')
         imageResponse = self.getImageForModel(model);
@@ -175,7 +180,10 @@ class Snipe:
             "fieldset_id": self.tvos_fieldset_id,
             "image": imageResponse
         }
-        return self.snipeItRequest("POST", "/models", json = payload)
+        response = self.snipeItRequest("POST", "/models", json = payload)
+        if response is None:
+            return None
+        return response
 
     def updateModel(self, model_id, payload):
         print("updating model "+model_id+" with payload", payload)
