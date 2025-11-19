@@ -46,6 +46,9 @@ class Snipe:
         })
         if result is None:
             return None
+        if result.status_code >= 400:
+            print(Fore.RED + f"Failed to search models: HTTP {result.status_code}" + Style.RESET_ALL)
+            return None
         jsonResult = result.json()
 
         if jsonResult['total'] == 0:
@@ -90,6 +93,9 @@ class Snipe:
         results = self.snipeItRequest("POST", "/models", json = payload)
         if results is None:
             return None
+        if results.status_code >= 400:
+            print(Fore.RED + f"Failed to create model: HTTP {results.status_code}" + Style.RESET_ALL)
+            return None
         #print('the server returned ', results);
         return results
 
@@ -103,6 +109,9 @@ class Snipe:
         #print(asset)
         response = self.snipeItRequest("POST", "/hardware", json = payload)
         if response is None:
+            return None
+        if response.status_code >= 400:
+            print(Fore.RED + f"Failed to create asset: HTTP {response.status_code}" + Style.RESET_ALL)
             return None
         return response.json()
 
@@ -168,6 +177,9 @@ class Snipe:
         response = self.snipeItRequest("POST", "/models", json = payload)
         if response is None:
             return None
+        if response.status_code >= 400:
+            print(Fore.RED + f"Failed to create mobile model: HTTP {response.status_code}" + Style.RESET_ALL)
+            return None
         return response
     def createAppleTvModel(self, model):
         print('creating new Apple Tv Model')
@@ -185,6 +197,9 @@ class Snipe:
         }
         response = self.snipeItRequest("POST", "/models", json = payload)
         if response is None:
+            return None
+        if response.status_code >= 400:
+            print(Fore.RED + f"Failed to create tvOS model: HTTP {response.status_code}" + Style.RESET_ALL)
             return None
         return response
 
