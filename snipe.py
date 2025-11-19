@@ -217,8 +217,8 @@ class Snipe:
         return finalPayload
 
     def snipeItRequest(self, type, url, params=None, json=None):
-        max_retries = 5
-        retry_delay = 60  # seconds
+        max_retries = 10
+        retry_delay = 60  # seconds - matches Snipe-IT rate limit window
 
         for attempt in range(max_retries):
             if self.request_count >= self.rate_limit:
@@ -249,17 +249,26 @@ class Snipe:
 
                 if response.status_code >= 500:
                     print(Fore.RED + f"Server error {response.status_code}. Retrying in {retry_delay} seconds..." + Style.RESET_ALL)
+                    print(f"Response body: {response.text}")
                     time.sleep(retry_delay)
                     self.request_count = 0
                     continue
 
+                if response.status_code >= 400:
+                    print(Fore.RED + f"Client error {response.status_code}: {response.text}" + Style.RESET_ALL)
+                    return response
+
                 return response
 
             except requests.RequestException as e:
-                print(Fore.RED + f"Request failed: {e}. Retrying in {retry_delay} seconds..." + Style.RESET_ALL)
+                print(Fore.RED + f"Request failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {retry_delay} seconds..." + Style.RESET_ALL)
                 time.sleep(retry_delay)
 
-        print(Fore.RED + f"Failed to complete request after {max_retries} attempts: {url}" + Style.RESET_ALL)
+        print(Fore.RED + f"FATAL: Failed to complete request after {max_retries} attempts." + Style.RESET_ALL)
+        print(Fore.RED + f"  URL: {self.url}{url}" + Style.RESET_ALL)
+        print(Fore.RED + f"  Method: {type}" + Style.RESET_ALL)
+        if params:
+            print(Fore.RED + f"  Params: {params}" + Style.RESET_ALL)
         return None
 
 
