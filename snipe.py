@@ -44,6 +44,8 @@ class Snipe:
         result = self.snipeItRequest("GET", "/models", params={
             "limit": "50", "offset": "0", "search": model, "sort": "created_at", "order": "asc"
         })
+        if result is None:
+            return None
         jsonResult = result.json()
 
         if jsonResult['total'] == 0:
@@ -94,9 +96,12 @@ class Snipe:
         payload['status_id'] = 2
         payload['model_id'] = model
         payload['asset_tag'] = payload['serial']
-        
+
         #print(asset)
-        return self.snipeItRequest("POST", "/hardware", json = payload).json()
+        response = self.snipeItRequest("POST", "/hardware", json = payload)
+        if response is None:
+            return None
+        return response.json()
 
     def assignAsset(self, user, asset_id):
         print('Assigning asset '+str(asset_id)+' to user '+user)
@@ -106,7 +111,10 @@ class Snipe:
             "search": email_to_match,
             "limit": 10  # Increase in case multiple matches exist
         }
-        response = self.snipeItRequest("GET", "/users", params=payload).json()
+        response_obj = self.snipeItRequest("GET", "/users", params=payload)
+        if response_obj is None:
+            return
+        response = response_obj.json()
         print(f"{response} Payload: {payload}")
         if response['total'] == 0:
             return
