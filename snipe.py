@@ -304,9 +304,17 @@ class Snipe:
                 device_maps = device.get("deviceMap", [])
 
                 if model_number in device_maps or model_number in identifiers:
+                    print(f"DEBUG: Found device in AppleDB: {device.get('name', 'Unknown')}")
                     device_key = device.get("key", model_number)
+                    print(f"DEBUG: Device key: {device_key}")
                     colors = device.get("colors", [])
-                    color = colors[0]["key"] if colors and isinstance(colors[0], dict) and "key" in colors[0] else "Silver"
+                    print(f"DEBUG: Available colors: {colors}")
+
+                    if colors and isinstance(colors[0], dict) and "key" in colors[0]:
+                        color = colors[0]["key"]
+                    else:
+                        color = "Silver"
+                    print(f"DEBUG: Selected color: {color}")
 
                     image_url = f"https://img.appledb.dev/device@256/{device_key}/{color}.png"
                     print(f"Found match. Trying image URL: {image_url}")
@@ -319,6 +327,14 @@ class Snipe:
                     return full_image_string
 
             print(f"No matching identifier or deviceMap found for {model_number}")
+            # Print sample device structure for debugging
+            if devices and len(devices) > 0:
+                print(f"DEBUG: Sample device structure (first device):")
+                print(f"  Keys: {list(devices[0].keys())}")
+                if 'identifier' in devices[0]:
+                    print(f"  identifier type: {type(devices[0]['identifier'])}, value: {devices[0]['identifier']}")
+                if 'deviceMap' in devices[0]:
+                    print(f"  deviceMap type: {type(devices[0]['deviceMap'])}, value: {devices[0]['deviceMap'][:100] if isinstance(devices[0]['deviceMap'], (list, str)) else devices[0]['deviceMap']}")
 
         except requests.exceptions.RequestException as e:
             print(Fore.RED + f"Error getting image from AppleDB: {e}" + Style.RESET_ALL)
