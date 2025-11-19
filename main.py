@@ -191,7 +191,13 @@ def run_sync(config):
                             logger.error(f"Failed to search asset {sn['serial_number']}: API request failed")
                             progress.advance(task)
                             continue
-                        asset = asset_response.json()
+                        try:
+                            asset = asset_response.json()
+                        except (ValueError, TypeError) as e:
+                            logger.error(f"Failed to parse asset response JSON for {sn['serial_number']}: {e}")
+                            logger.error(f"Response status: {asset_response.status_code}, body: {asset_response.text}")
+                            progress.advance(task)
+                            continue
 
                         # Look up or create model
                         model_response = snipe.searchModel(sn['device_model'])
@@ -200,7 +206,14 @@ def run_sync(config):
                             progress.advance(task)
                             continue
 
-                        model = model_response.json()
+                        try:
+                            model = model_response.json()
+                        except (ValueError, TypeError) as e:
+                            logger.error(f"Failed to parse model response JSON for {sn['device_model']}: {e}")
+                            logger.error(f"Response status: {model_response.status_code}, body: {model_response.text}")
+                            progress.advance(task)
+                            continue
+
                         if model['total'] == 0:
                             logger.info(f"Creating new model: {sn['device_model']}")
                             if sn['os'] == "mac":
@@ -219,7 +232,14 @@ def run_sync(config):
                                 progress.advance(task)
                                 continue
 
-                            model = create_response.json()['payload']['id']
+                            try:
+                                model_data = create_response.json()
+                                model = model_data['payload']['id']
+                            except (ValueError, TypeError, KeyError) as e:
+                                logger.error(f"Failed to parse model creation response for {sn['device_model']}: {e}")
+                                logger.error(f"Response status: {create_response.status_code}, body: {create_response.text}")
+                                progress.advance(task)
+                                continue
                         else:
                             model = model['rows'][0]['id']
 
