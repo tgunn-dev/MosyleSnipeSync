@@ -257,12 +257,36 @@ def run_sync(config):
                                 progress.advance(task)
                                 continue
                             asset = create_asset_response
-                            if mosyle_user:
-                                logger.info(f"Assigning asset to user: {mosyle_user}")
-                                snipe.assignAsset(mosyle_user, asset['payload']['id'])
-                            total_devices_processed += 1
-                            progress.advance(task)
-                            continue
+                            new_asset_id = asset.get('payload', {}).get('id')
+                            if new_asset_id:
+                                # Assign user to newly created asset
+                                if mosyle_user:
+                                    logger.info(f"Assigning asset to user: {mosyle_user}")
+                                    snipe.assignAsset(mosyle_user, new_asset_id)
+
+                                # Refetch the asset to get consistent response structure for downstream code
+                                logger.debug(f"Refetching newly created asset {sn['serial_number']} for consistent structure")
+                                asset_refetch = snipe.listHardware(sn['serial_number'])
+                                if asset_refetch is None:
+                                    logger.error(f"Failed to refetch asset {sn['serial_number']} after creation")
+                                    total_devices_processed += 1
+                                    progress.advance(task)
+                                    continue
+                                try:
+                                    asset = asset_refetch.json()
+                                except (ValueError, TypeError) as e:
+                                    logger.error(f"Failed to parse refetched asset JSON for {sn['serial_number']}: {e}")
+                                    total_devices_processed += 1
+                                    progress.advance(task)
+                                    continue
+                            else:
+                                logger.error(f"Failed to extract asset ID from creation response for {sn['serial_number']}")
+                                total_devices_processed += 1
+                                progress.advance(task)
+                                continue
+
+                            # Continue to sync user assignment and asset tag with refetched asset
+                            # (don't use the old continue statement)
 
                         # Update existing asset
                         if asset.get('total') == 1 and asset.get('rows'):

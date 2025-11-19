@@ -204,14 +204,14 @@ class Snipe:
         if(payload['os'] == "mac"):
             os = "MacOS"
             #cpu stuff is only supplied by MacOS
-            finalPayload["_snipeit_cpu_family_7"]: payload['cpu_model']
+            finalPayload["_snipeit_cpu_family_7"] = payload['cpu_model']
 
-            finalPayload["_snipeit_percent_disk_5"]: payload['percent_disk'] + " GB"
-            finalPayload["_snipeit_available_disk_5"]: payload['available_disk'] + " GB"
+            finalPayload["_snipeit_percent_disk_5"] = payload['percent_disk'] + " GB"
+            finalPayload["_snipeit_available_disk_5"] = payload['available_disk'] + " GB"
         elif(payload['os'] == "ios"):
             os = "iOS"
-            finalPayload["_snipeit_percent_disk_5"]: payload['percent_disk'] + " GB"
-            finalPayload["_snipeit_available_disk_5"]: payload['available_disk'] + " GB"
+            finalPayload["_snipeit_percent_disk_5"] = payload['percent_disk'] + " GB"
+            finalPayload["_snipeit_available_disk_5"] = payload['available_disk'] + " GB"
         elif(payload['os'] == "tvos"):
             os = "tvos"
         else:
