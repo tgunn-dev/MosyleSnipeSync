@@ -257,7 +257,7 @@ def run_sync(config):
                                 progress.advance(task)
                                 continue
                             asset = create_asset_response
-                            new_asset_id = asset.get('payload', {}).get('id')
+                            new_asset_id = asset.get('payload', {}).get('id') if isinstance(asset, dict) else None
                             if new_asset_id:
                                 # Assign user to newly created asset
                                 if mosyle_user:
@@ -273,8 +273,15 @@ def run_sync(config):
                                     progress.advance(task)
                                     continue
                                 try:
-                                    asset = asset_refetch.json()
-                                except (ValueError, TypeError) as e:
+                                    refetch_data = asset_refetch.json()
+                                    if refetch_data and isinstance(refetch_data, dict):
+                                        asset = refetch_data
+                                    else:
+                                        logger.error(f"Refetch returned invalid data for {sn['serial_number']}: {refetch_data}")
+                                        total_devices_processed += 1
+                                        progress.advance(task)
+                                        continue
+                                except (ValueError, TypeError, AttributeError) as e:
                                     logger.error(f"Failed to parse refetched asset JSON for {sn['serial_number']}: {e}")
                                     total_devices_processed += 1
                                     progress.advance(task)
