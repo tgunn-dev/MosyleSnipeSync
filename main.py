@@ -186,18 +186,40 @@ def run_sync(config):
                             continue
 
                         # Look up existing asset
-                        asset = snipe.listHardware(sn['serial_number']).json()
+                        asset_response = snipe.listHardware(sn['serial_number'])
+                        if asset_response is None:
+                            logger.error(f"Failed to search asset {sn['serial_number']}: API request failed")
+                            progress.advance(task)
+                            continue
+                        asset = asset_response.json()
 
                         # Look up or create model
-                        model = snipe.searchModel(sn['device_model']).json()
+                        model_response = snipe.searchModel(sn['device_model'])
+                        if model_response is None:
+                            logger.error(f"Failed to search model for {sn['device_model']}: API request failed")
+                            progress.advance(task)
+                            continue
+
+                        model = model_response.json()
                         if model['total'] == 0:
                             logger.info(f"Creating new model: {sn['device_model']}")
                             if sn['os'] == "mac":
-                                model = snipe.createModel(sn['device_model']).json()['payload']['id']
+                                create_response = snipe.createModel(sn['device_model'])
                             elif sn['os'] == "ios":
-                                model = snipe.createMobileModel(sn['device_model']).json()['payload']['id']
+                                create_response = snipe.createMobileModel(sn['device_model'])
                             elif sn['os'] == "tvos":
-                                model = snipe.createAppleTvModel(sn['device_model']).json()['payload']['id']
+                                create_response = snipe.createAppleTvModel(sn['device_model'])
+                            else:
+                                logger.error(f"Unknown OS type: {sn['os']}")
+                                progress.advance(task)
+                                continue
+
+                            if create_response is None:
+                                logger.error(f"Failed to create model for {sn['device_model']}: API request failed")
+                                progress.advance(task)
+                                continue
+
+                            model = create_response.json()['payload']['id']
                         else:
                             model = model['rows'][0]['id']
 
@@ -208,7 +230,12 @@ def run_sync(config):
                         # Create asset if doesn't exist
                         if asset.get('total', 0) == 0:
                             logger.info(f"Creating new asset: {sn['serial_number']} ({sn['device_model']})")
-                            asset = snipe.createAsset(model, devicePayload)
+                            create_asset_response = snipe.createAsset(model, devicePayload)
+                            if create_asset_response is None:
+                                logger.error(f"Failed to create asset for {sn['serial_number']}: API request failed")
+                                progress.advance(task)
+                                continue
+                            asset = create_asset_response
                             if mosyle_user:
                                 logger.info(f"Assigning asset to user: {mosyle_user}")
                                 snipe.assignAsset(mosyle_user, asset['payload']['id'])
