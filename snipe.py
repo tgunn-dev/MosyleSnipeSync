@@ -50,6 +50,9 @@ class Snipe:
             print(Fore.RED + f"Failed to search models: HTTP {result.status_code}" + Style.RESET_ALL)
             return None
         jsonResult = result.json()
+        if isinstance(jsonResult, dict) and jsonResult.get('status') == 'error':
+            print(Fore.RED + f"searchModel: API returned error: {jsonResult.get('messages', jsonResult)}" + Style.RESET_ALL)
+            return None
 
         if jsonResult['total'] == 0:
             print("Model was not found.")
@@ -96,6 +99,13 @@ class Snipe:
         if results.status_code >= 400:
             print(Fore.RED + f"Failed to create model: HTTP {results.status_code}" + Style.RESET_ALL)
             return None
+        try:
+            result_json = results.json()
+            if isinstance(result_json, dict) and result_json.get('status') == 'error':
+                print(Fore.RED + f"createModel: API returned error: {result_json.get('messages', result_json)}" + Style.RESET_ALL)
+                return None
+        except (ValueError, TypeError):
+            pass
         #print('the server returned ', results);
         return results
 
@@ -119,6 +129,10 @@ class Snipe:
             return None
         try:
             result = response.json()
+            # Check if the API returned an error status in the response body
+            if isinstance(result, dict) and result.get('status') == 'error':
+                print(Fore.RED + f"createAsset: API returned error: {result.get('messages', result)}" + Style.RESET_ALL)
+                return None
             print(f"createAsset: Successfully created, response: {result}")
             return result
         except (ValueError, TypeError, AttributeError) as e:
@@ -190,7 +204,15 @@ class Snipe:
         if response.status_code >= 400:
             print(Fore.RED + f"Failed to create mobile model: HTTP {response.status_code}" + Style.RESET_ALL)
             return None
+        try:
+            response_json = response.json()
+            if isinstance(response_json, dict) and response_json.get('status') == 'error':
+                print(Fore.RED + f"createMobileModel: API returned error: {response_json.get('messages', response_json)}" + Style.RESET_ALL)
+                return None
+        except (ValueError, TypeError):
+            pass
         return response
+
     def createAppleTvModel(self, model):
         print('creating new Apple Tv Model')
         imageResponse = self.getImageForModel(model)
@@ -211,6 +233,13 @@ class Snipe:
         if response.status_code >= 400:
             print(Fore.RED + f"Failed to create tvOS model: HTTP {response.status_code}" + Style.RESET_ALL)
             return None
+        try:
+            response_json = response.json()
+            if isinstance(response_json, dict) and response_json.get('status') == 'error':
+                print(Fore.RED + f"createAppleTvModel: API returned error: {response_json.get('messages', response_json)}" + Style.RESET_ALL)
+                return None
+        except (ValueError, TypeError):
+            pass
         return response
 
     def updateModel(self, model_id, payload):
