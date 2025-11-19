@@ -260,11 +260,13 @@ def run_sync(config):
                         if asset.get('total', 0) == 0:
                             logger.info(f"Creating new asset: {sn['serial_number']} ({sn['device_model']})")
                             create_asset_response = snipe.createAsset(model, devicePayload)
+                            logger.debug(f"createAsset returned: {create_asset_response} (type: {type(create_asset_response)})")
                             if create_asset_response is None:
                                 logger.error(f"Failed to create asset for {sn['serial_number']}: API request failed")
                                 progress.advance(task)
                                 continue
                             asset = create_asset_response
+                            logger.debug(f"asset type: {type(asset)}, value: {asset}")
                             new_asset_id = asset.get('payload', {}).get('id') if isinstance(asset, dict) else None
                             if new_asset_id:
                                 # Assign user to newly created asset
@@ -303,6 +305,12 @@ def run_sync(config):
                             # Continue to sync user assignment and asset tag with refetched asset
                             # (don't use the old continue statement)
 
+                        # Safety check before accessing asset structure
+                        if not isinstance(asset, dict):
+                            logger.error(f"Asset is not a dict for {sn['serial_number']}: {type(asset)}")
+                            progress.advance(task)
+                            continue
+
                         # Update existing asset
                         if asset.get('total') == 1 and asset.get('rows'):
                             logger.info(f"Updating asset: {sn['serial_number']}")
@@ -310,6 +318,11 @@ def run_sync(config):
 
                         # Sync user assignment
                         if mosyle_user:
+                            if not asset.get('rows'):
+                                logger.error(f"Asset has no rows for {sn['serial_number']}, cannot sync user assignment")
+                                total_devices_processed += 1
+                                progress.advance(task)
+                                continue
                             assigned = asset['rows'][0]['assigned_to']
                             if assigned is None and sn.get('useremail'):
                                 logger.info(f"Assigning asset to user: {sn['useremail']}")
