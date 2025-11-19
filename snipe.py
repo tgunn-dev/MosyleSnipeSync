@@ -110,10 +110,14 @@ class Snipe:
         response = self.snipeItRequest("POST", "/hardware", json = payload)
         if response is None:
             return None
-        if response.status_code >= 400:
-            print(Fore.RED + f"Failed to create asset: HTTP {response.status_code}" + Style.RESET_ALL)
+        if not hasattr(response, 'status_code') or response.status_code >= 400:
+            print(Fore.RED + f"Failed to create asset: HTTP {getattr(response, 'status_code', 'unknown')}" + Style.RESET_ALL)
             return None
-        return response.json()
+        try:
+            return response.json()
+        except (ValueError, TypeError, AttributeError) as e:
+            print(Fore.RED + f"Failed to parse asset response JSON: {e}" + Style.RESET_ALL)
+            return None
 
     def assignAsset(self, user, asset_id):
         print('Assigning asset '+str(asset_id)+' to user '+user)

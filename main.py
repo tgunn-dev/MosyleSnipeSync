@@ -191,11 +191,19 @@ def run_sync(config):
                             logger.error(f"Failed to search asset {sn['serial_number']}: API request failed")
                             progress.advance(task)
                             continue
+                        if asset_response.status_code >= 400:
+                            logger.error(f"Failed to search asset {sn['serial_number']}: HTTP {asset_response.status_code}")
+                            progress.advance(task)
+                            continue
                         try:
                             asset = asset_response.json()
                         except (ValueError, TypeError) as e:
                             logger.error(f"Failed to parse asset response JSON for {sn['serial_number']}: {e}")
                             logger.error(f"Response status: {asset_response.status_code}, body: {asset_response.text}")
+                            progress.advance(task)
+                            continue
+                        if asset is None:
+                            logger.error(f"Asset response was null for {sn['serial_number']}")
                             progress.advance(task)
                             continue
 
