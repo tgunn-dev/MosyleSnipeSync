@@ -71,9 +71,10 @@ class Snipe:
         return result
 
     def createModel(self, model):
-
-        imageResponse = self.getImageForModel(model);
-        if(imageResponse == False):
+        # Try to get image, but don't fail if it's not available
+        imageResponse = self.getImageForModel(model)
+        if imageResponse == False or imageResponse is None:
+            print(f"No image available for model {model}, creating without image")
             imageResponse = None
 
         payload = {
@@ -152,8 +153,9 @@ class Snipe:
 
     def createMobileModel(self, model):
         print('creating new mobile Model')
-        imageResponse = self.getImageForModel(model);
-        if(imageResponse == False):
+        imageResponse = self.getImageForModel(model)
+        if imageResponse == False or imageResponse is None:
+            print(f"No image available for model {model}, creating without image")
             imageResponse = None
         payload = {
 			"name": model,
@@ -169,8 +171,9 @@ class Snipe:
         return response
     def createAppleTvModel(self, model):
         print('creating new Apple Tv Model')
-        imageResponse = self.getImageForModel(model);
-        if(imageResponse == False):
+        imageResponse = self.getImageForModel(model)
+        if imageResponse == False or imageResponse is None:
+            print(f"No image available for model {model}, creating without image")
             imageResponse = None
         payload = {
 			"name": model,
@@ -305,8 +308,11 @@ class Snipe:
 
                 if model_number in device_maps or model_number in identifiers:
                     print(f"DEBUG: Found device in AppleDB: {device.get('name', 'Unknown')}")
-                    device_key = device.get("key", model_number)
-                    print(f"DEBUG: Device key: {device_key}")
+
+                    # Try to get image using imageKey (preferred) or key fallback
+                    image_key = device.get("imageKey") or device.get("key", model_number)
+                    print(f"DEBUG: Image key: {image_key}")
+
                     colors = device.get("colors", [])
                     print(f"DEBUG: Available colors: {colors}")
 
@@ -316,15 +322,31 @@ class Snipe:
                         color = "Silver"
                     print(f"DEBUG: Selected color: {color}")
 
-                    image_url = f"https://img.appledb.dev/device@256/{device_key}/{color}.png"
-                    print(f"Found match. Trying image URL: {image_url}")
+                    # Try multiple URL formats in order of preference
+                    image_urls = [
+                        f"https://img.appledb.dev/device@256/{image_key}/{color}.png",  # Original format
+                        f"https://img.appledb.dev/device/{image_key}/{color}.png",       # Without size
+                        f"https://img.appledb.dev/device@256/{image_key}.png",           # Without color
+                        f"https://img.appledb.dev/device/{image_key}.png",               # Simplest format
+                    ]
 
-                    img_response = requests.get(image_url)
-                    img_response.raise_for_status()
+                    for image_url in image_urls:
+                        try:
+                            print(f"Trying image URL: {image_url}")
+                            img_response = requests.get(image_url, timeout=5)
+                            if img_response.status_code == 200:
+                                print(f"Successfully fetched image from: {image_url}")
+                                base64encoded = base64.b64encode(img_response.content).decode("utf8")
+                                full_image_string = "data:image/png;name=image.png;base64," + base64encoded
+                                return full_image_string
+                            else:
+                                print(f"  404 - Image not found at {image_url}")
+                        except requests.exceptions.RequestException as e:
+                            print(f"  Error fetching {image_url}: {e}")
+                            continue
 
-                    base64encoded = base64.b64encode(img_response.content).decode("utf8")
-                    full_image_string = "data:image/png;name=image.png;base64," + base64encoded
-                    return full_image_string
+                    print(f"Could not fetch image from any URL format for {model_number}")
+                    return False
 
             print(f"No matching identifier or deviceMap found for {model_number}")
             # Print sample device structure for debugging
